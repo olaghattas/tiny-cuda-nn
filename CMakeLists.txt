@@ -23,10 +23,10 @@
 cmake_minimum_required(VERSION 3.18)
 
 project(
-	tiny-cuda-nn
-	VERSION 1.6
-	DESCRIPTION "Lightning fast & tiny C++/CUDA neural network framework"
-	LANGUAGES CXX CUDA
+    tiny-cuda-nn
+    VERSION 1.6
+    DESCRIPTION "Lightning fast & tiny C++/CUDA neural network framework"
+    LANGUAGES CXX CUDA
 )
 
 option(TCNN_BUILD_BENCHMARK "Build tiny-cuda-nn example benchmark?" ON)
@@ -39,27 +39,27 @@ set(TCNN_CUDA_ARCHITECTURES "" CACHE STRING "Build tiny-cuda-nn for a specific G
 
 # Set a default configuration if none was specified
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-	message(STATUS "No release type specified. Setting to 'Release'.")
-	set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
-	set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "RelWithDebInfo")
-endif()
+  message(STATUS "No release type specified. Setting to 'Release'.")
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "RelWithDebInfo")
+endif ()
 
 if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/cutlass/CMakeLists.txt")
-	message(FATAL_ERROR
-		"Some tiny-cuda-nn dependencies are missing. "
-		"If you forgot the \"--recursive\" flag when cloning this project, "
-		"this can be fixed by calling \"git submodule update --init --recursive\"."
-	)
-endif()
+  message(FATAL_ERROR
+      "Some tiny-cuda-nn dependencies are missing. "
+      "If you forgot the \"--recursive\" flag when cloning this project, "
+      "this can be fixed by calling \"git submodule update --init --recursive\"."
+      )
+endif ()
 
 if (APPLE)
-	set(CMAKE_MACOSX_RPATH ON)
-endif()
+  set(CMAKE_MACOSX_RPATH ON)
+endif ()
 
 if (MSVC)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D_CRT_SECURE_NO_WARNINGS")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
-endif()
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D_CRT_SECURE_NO_WARNINGS")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+endif ()
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -84,14 +84,14 @@ string(REPLACE " " ";" INSTALLED_GPU_CCS_3 "${INSTALLED_GPU_CCS_2}")
 string(REPLACE "." "" CUDA_ARCH_LIST "${INSTALLED_GPU_CCS_3}")
 
 if (DEFINED ENV{TCNN_CUDA_ARCHITECTURES})
-	message(STATUS "Obtained target architecture from environment variable TCNN_CUDA_ARCHITECTURES=$ENV{TCNN_CUDA_ARCHITECTURES}")
-	set(CMAKE_CUDA_ARCHITECTURES $ENV{TCNN_CUDA_ARCHITECTURES})
+  message(STATUS "Obtained target architecture from environment variable TCNN_CUDA_ARCHITECTURES=$ENV{TCNN_CUDA_ARCHITECTURES}")
+  set(CMAKE_CUDA_ARCHITECTURES $ENV{TCNN_CUDA_ARCHITECTURES})
 elseif (TCNN_CUDA_ARCHITECTURES)
-	message(STATUS "Obtained target architecture from CMake variable TCNN_CUDA_ARCHITECTURES=${TCNN_CUDA_ARCHITECTURES}")
-	set(CMAKE_CUDA_ARCHITECTURES ${TCNN_CUDA_ARCHITECTURES})
-else()
-	set(CMAKE_CUDA_ARCHITECTURES ${CUDA_ARCH_LIST})
-endif()
+  message(STATUS "Obtained target architecture from CMake variable TCNN_CUDA_ARCHITECTURES=${TCNN_CUDA_ARCHITECTURES}")
+  set(CMAKE_CUDA_ARCHITECTURES ${TCNN_CUDA_ARCHITECTURES})
+else ()
+  set(CMAKE_CUDA_ARCHITECTURES ${CUDA_ARCH_LIST})
+endif ()
 
 # Remove unsupported architectures
 list(FILTER CMAKE_CUDA_ARCHITECTURES EXCLUDE REGEX "PTX")
@@ -102,27 +102,27 @@ list(REMOVE_DUPLICATES CMAKE_CUDA_ARCHITECTURES)
 set(LATEST_SUPPORTED_CUDA_ARCHITECTURE 90)
 
 if (CUDA_VERSION VERSION_LESS 11.8)
-	set(LATEST_SUPPORTED_CUDA_ARCHITECTURE 86)
-endif()
+  set(LATEST_SUPPORTED_CUDA_ARCHITECTURE 86)
+endif ()
 
 if (CUDA_VERSION VERSION_LESS 11.1)
-	set(LATEST_SUPPORTED_CUDA_ARCHITECTURE 80)
-endif()
+  set(LATEST_SUPPORTED_CUDA_ARCHITECTURE 80)
+endif ()
 
 if (CUDA_VERSION VERSION_LESS 11.0)
-	set(LATEST_SUPPORTED_CUDA_ARCHITECTURE 75)
-endif()
+  set(LATEST_SUPPORTED_CUDA_ARCHITECTURE 75)
+endif ()
 
 foreach (CUDA_CC IN LISTS CMAKE_CUDA_ARCHITECTURES)
-	if (CUDA_CC GREATER ${LATEST_SUPPORTED_CUDA_ARCHITECTURE})
-		message(WARNING "CUDA version ${CUDA_VERSION} is too low for architecture ${CUDA_CC}. Targeting architecture ${LATEST_SUPPORTED_CUDA_ARCHITECTURE} instead.")
-		list(REMOVE_ITEM CMAKE_CUDA_ARCHITECTURES ${CUDA_CC})
-	endif()
-endforeach(CUDA_CC)
+  if (CUDA_CC GREATER ${LATEST_SUPPORTED_CUDA_ARCHITECTURE})
+    message(WARNING "CUDA version ${CUDA_VERSION} is too low for architecture ${CUDA_CC}. Targeting architecture ${LATEST_SUPPORTED_CUDA_ARCHITECTURE} instead.")
+    list(REMOVE_ITEM CMAKE_CUDA_ARCHITECTURES ${CUDA_CC})
+  endif ()
+endforeach (CUDA_CC)
 
 if (NOT CMAKE_CUDA_ARCHITECTURES)
-	list(APPEND CMAKE_CUDA_ARCHITECTURES ${LATEST_SUPPORTED_CUDA_ARCHITECTURE})
-endif()
+  list(APPEND CMAKE_CUDA_ARCHITECTURES ${LATEST_SUPPORTED_CUDA_ARCHITECTURE})
+endif ()
 
 # Sort the list to obtain lowest architecture that must be compiled for.
 list(SORT CMAKE_CUDA_ARCHITECTURES COMPARE NATURAL ORDER ASCENDING)
@@ -132,40 +132,40 @@ string(REPLACE "-virtual" "" MIN_GPU_ARCH "${MIN_GPU_ARCH}")
 
 message(STATUS "Targeting GPU architectures: ${CMAKE_CUDA_ARCHITECTURES}")
 if (TCNN_HAS_PARENT)
-	set(TCNN_CUDA_ARCHITECTURES ${CMAKE_CUDA_ARCHITECTURES} PARENT_SCOPE)
-	set(TCNN_CUDA_VERSION ${CUDA_VERSION} PARENT_SCOPE)
-endif()
+  set(TCNN_CUDA_ARCHITECTURES ${CMAKE_CUDA_ARCHITECTURES} PARENT_SCOPE)
+  set(TCNN_CUDA_VERSION ${CUDA_VERSION} PARENT_SCOPE)
+endif ()
 
 if (MIN_GPU_ARCH LESS_EQUAL 70)
-	message(WARNING
-		"Fully fused MLPs do not support GPU architectures of 70 or less. "
-		"Falling back to CUTLASS MLPs. Remove GPU architectures 70 and lower "
-		"to allow maximum performance"
-	)
-endif()
+  message(WARNING
+      "Fully fused MLPs do not support GPU architectures of 70 or less. "
+      "Falling back to CUTLASS MLPs. Remove GPU architectures 70 and lower "
+      "to allow maximum performance"
+      )
+endif ()
 
 if (CUDA_VERSION VERSION_LESS 10.2)
-	message(FATAL_ERROR "CUDA version too low. tiny-cuda-nn require CUDA 10.2 or higher.")
-endif()
+  message(FATAL_ERROR "CUDA version too low. tiny-cuda-nn require CUDA 10.2 or higher.")
+endif ()
 
 list(APPEND TCNN_DEFINITIONS -DTCNN_MIN_GPU_ARCH=${MIN_GPU_ARCH})
 if (CUDA_VERSION VERSION_GREATER_EQUAL 11.0)
-	# Only compile the shampoo optimizer if
-	# a new enough cuBLAS version is available.
-	list(APPEND TCNN_DEFINITIONS -DTCNN_SHAMPOO)
-endif()
+  # Only compile the shampoo optimizer if
+  # a new enough cuBLAS version is available.
+  list(APPEND TCNN_DEFINITIONS -DTCNN_SHAMPOO)
+endif ()
 
 if (TCNN_HAS_PARENT)
-	set(TCNN_DEFINITIONS ${TCNN_DEFINITIONS} PARENT_SCOPE)
-endif()
+  set(TCNN_DEFINITIONS ${TCNN_DEFINITIONS} PARENT_SCOPE)
+endif ()
 
 if (MSVC)
-else()
-	list(APPEND CUDA_NVCC_FLAGS "-Xcompiler=-mf16c")
-	list(APPEND CUDA_NVCC_FLAGS "-Xcompiler=-Wno-float-conversion")
-	list(APPEND CUDA_NVCC_FLAGS "-Xcompiler=-fno-strict-aliasing")
-	list(APPEND CUDA_NVCC_FLAGS "-Xcudafe=--diag_suppress=unrecognized_gcc_pragma")
-endif()
+else ()
+  list(APPEND CUDA_NVCC_FLAGS "-Xcompiler=-mf16c")
+  list(APPEND CUDA_NVCC_FLAGS "-Xcompiler=-Wno-float-conversion")
+  list(APPEND CUDA_NVCC_FLAGS "-Xcompiler=-fno-strict-aliasing")
+  list(APPEND CUDA_NVCC_FLAGS "-Xcudafe=--diag_suppress=unrecognized_gcc_pragma")
+endif ()
 list(APPEND CUDA_NVCC_FLAGS "--extended-lambda")
 list(APPEND CUDA_NVCC_FLAGS "--expt-relaxed-constexpr")
 
@@ -175,17 +175,18 @@ list(APPEND CUDA_NVCC_FLAGS "--expt-relaxed-constexpr")
 ###############################################################################
 
 if (MSVC)
-else()
-	set(CUDA_TOOLKIT_ROOT_DIR /opt/cuda/targets/x86_64-linux)
-endif()
+else ()
+  set(CUDA_TOOLKIT_ROOT_DIR /opt/cuda/targets/x86_64-linux)
+endif ()
 find_library(
-	CUDA_CUBLASLT_LIBRARY cublasLt
-	${CUDA_TOOLKIT_ROOT_DIR}/lib64
-	${CUDA_TOOLKIT_ROOT_DIR}/lib
-	${CUDA_TOOLKIT_ROOT_DIR}/lib/x64
+    CUDA_CUBLASLT_LIBRARY cublasLt
+    ${CUDA_TOOLKIT_ROOT_DIR}/lib64
+    ${CUDA_TOOLKIT_ROOT_DIR}/lib
+    ${CUDA_TOOLKIT_ROOT_DIR}/lib/x64
 )
 
-set(BUILD_SHARED_LIBS OFF)
+#set(BUILD_SHARED_LIBS OFF)
+set(FMT_INSTALL ON)
 add_subdirectory("dependencies/fmt")
 
 ###############################################################################
@@ -198,21 +199,21 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL ${CMAKE_BINARY_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR})
 
 set(TCNN_SOURCES
-	src/common.cu
-	src/common_device.cu
-	src/cpp_api.cu
-	src/cutlass_mlp.cu
-	src/encoding.cu
-	src/loss.cu
-	src/network.cu
-	src/object.cu
-	src/optimizer.cu
-	src/reduce_sum.cu
-)
+    src/common.cu
+    src/common_device.cu
+    src/cpp_api.cu
+    src/cutlass_mlp.cu
+    src/encoding.cu
+    src/loss.cu
+    src/network.cu
+    src/object.cu
+    src/optimizer.cu
+    src/reduce_sum.cu
+    )
 
 if (MIN_GPU_ARCH GREATER 70)
-	list(APPEND TCNN_SOURCES src/fully_fused_mlp.cu)
-endif()
+  list(APPEND TCNN_SOURCES src/fully_fused_mlp.cu)
+endif ()
 
 ###############################################################################
 # Linker / library
@@ -221,18 +222,78 @@ endif()
 add_library(tiny-cuda-nn STATIC ${TCNN_SOURCES})
 target_compile_definitions(tiny-cuda-nn PUBLIC ${TCNN_DEFINITIONS})
 target_compile_options(tiny-cuda-nn PUBLIC $<$<COMPILE_LANGUAGE:CUDA>:${CUDA_NVCC_FLAGS}>)
+
+#target_include_directories(tiny-cuda-nn PUBLIC
+#		$<INSTALL_INTERFACE:include>
+#		)
+set(TINY_INCLUDE_DIRS
+    "include"
+    "dependencies"
+    "dependencies/cutlass/include"
+    "dependencies/cutlass/tools/util/include"
+    "dependencies/fmt/include")
+
 target_include_directories(tiny-cuda-nn PUBLIC
-	"include"
-	"dependencies"
-	"dependencies/cutlass/include"
-	"dependencies/cutlass/tools/util/include"
-	"dependencies/fmt/include"
-)
-target_link_libraries(tiny-cuda-nn PUBLIC ${CUDA_LIBRARIES} cuda cublas fmt)
+    $<BUILD_INTERFACE:${TINY_INCLUDE_DIRS}>
+    )
+target_link_libraries(tiny-cuda-nn PRIVATE ${CUDA_LIBRARIES} cuda cublas fmt)
 
 if (TCNN_BUILD_EXAMPLES)
-	add_subdirectory("samples")
-endif()
+  add_subdirectory("samples")
+endif ()
 if (TCNN_BUILD_BENCHMARK)
-	add_subdirectory("benchmarks/image")
-endif()
+  add_subdirectory("benchmarks/image")
+endif ()
+
+
+#############
+## Install ##
+#############
+install(
+    DIRECTORY include/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+install(
+    TARGETS ${PROJECT_NAME}
+    EXPORT export_${PROJECT_NAME}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+include(CMakePackageConfigHelpers)
+
+# Create the ${PROJECT_NAME}Config.cmake.
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in
+    "${PROJECT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/${PROJECT_NAME}Config.cmake" @ONLY
+)
+
+# Create the ${PROJECT_NAME}ConfigVersion.cmake.
+write_basic_package_version_file(
+    ${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
+    COMPATIBILITY AnyNewerVersion
+)
+
+install(
+    FILES
+    "${PROJECT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/${PROJECT_NAME}Config.cmake"
+    "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
+    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}
+)
+
+# Export targets.
+set(export_targets ${export_targets};${PROJECT_NAME})
+export(
+    EXPORT export_${PROJECT_NAME}
+    FILE "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake"
+    NAMESPACE ${PROJECT_NAME}::
+)
+
+install(
+    EXPORT export_${PROJECT_NAME}
+    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}
+    FILE ${PROJECT_NAME}Targets.cmake
+    NAMESPACE ${PROJECT_NAME}::
+)
