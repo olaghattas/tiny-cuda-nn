@@ -72,7 +72,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CUDA_STANDARD 14)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_EXTENSIONS OFF)
-set(CUDA_LINK_LIBRARIES_KEYWORD PUBLIC)
+#set(CUDA_LINK_LIBRARIES_KEYWORD PUBLIC)
 
 get_directory_property(TCNN_HAS_PARENT PARENT_DIRECTORY)
 
@@ -185,10 +185,6 @@ find_library(
     ${CUDA_TOOLKIT_ROOT_DIR}/lib/x64
 )
 
-#set(BUILD_SHARED_LIBS OFF)
-set(FMT_INSTALL ON)
-add_subdirectory("dependencies/fmt")
-
 ###############################################################################
 # tiny-cuda-nn library, samples, and benchmarks
 ###############################################################################
@@ -223,20 +219,30 @@ add_library(tiny-cuda-nn STATIC ${TCNN_SOURCES})
 target_compile_definitions(tiny-cuda-nn PUBLIC ${TCNN_DEFINITIONS})
 target_compile_options(tiny-cuda-nn PUBLIC $<$<COMPILE_LANGUAGE:CUDA>:${CUDA_NVCC_FLAGS}>)
 
-#target_include_directories(tiny-cuda-nn PUBLIC
-#		$<INSTALL_INTERFACE:include>
-#		)
 set(TINY_INCLUDE_DIRS
     "include"
     "dependencies"
     "dependencies/cutlass/include"
     "dependencies/cutlass/tools/util/include"
-    "dependencies/fmt/include")
+    "dependencies/pcg32/"
+    )
 
 target_include_directories(tiny-cuda-nn PUBLIC
     $<BUILD_INTERFACE:${TINY_INCLUDE_DIRS}>
+    #    $<BUILD_INTERFACE:${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}>
     )
-target_link_libraries(tiny-cuda-nn PRIVATE ${CUDA_LIBRARIES} cuda cublas fmt)
+#target_include_directories(tiny-cuda-nn PUBLIC
+##    $<INSTALL_INTERFACE:${TINY_INCLUDE_DIRS}>
+#    $<INSTALL_INTERFACE:${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}>
+#    )
+
+#message("cuda!!!!!! " ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+
+find_package(nlohmann_json REQUIRED)
+find_package(FMT REQUIRED)
+
+
+target_link_libraries(tiny-cuda-nn PUBLIC ${CUDA_LIBRARIES} cuda cublas fmt::fmt ${nlohmann_json_LIBRARIES})
 
 if (TCNN_BUILD_EXAMPLES)
   add_subdirectory("samples")
@@ -249,17 +255,30 @@ endif ()
 #############
 ## Install ##
 #############
+set(CMAKE_INSTALL_DATAROOTDIR ${CMAKE_INSTALL_PREFIX}/share)
+
+get_cmake_property(_variableNames VARIABLES)
+foreach (_variableName ${_variableNames})
+  message(STATUS "${_variableName}=${${_variableName}}")
+endforeach ()
+
 install(
     DIRECTORY include/
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/include
+)
+set(tiny-cuda-nn_INCLUDE_DIR ${CMAKE_INSTALL_PREFIX}/include)
+
+install(
+    DIRECTORY dependencies/pcg32
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/include
 )
 
 install(
     TARGETS ${PROJECT_NAME}
     EXPORT export_${PROJECT_NAME}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+    LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+    RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
 )
 
 include(CMakePackageConfigHelpers)
@@ -297,3 +316,5 @@ install(
     FILE ${PROJECT_NAME}Targets.cmake
     NAMESPACE ${PROJECT_NAME}::
 )
+
+

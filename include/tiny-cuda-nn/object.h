@@ -32,7 +32,7 @@
 #include <tiny-cuda-nn/common.h>
 #include <tiny-cuda-nn/gpu_matrix.h>
 
-#include <json/json.hpp>
+#include <nlohmann/json.hpp>
 
 #include <pcg32/pcg32.h>
 

@@ -11,4 +11,9 @@ find_dependency(fmt REQUIRED)
 include("${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@Targets.cmake")
 
 # These are IMPORTED targets created by @PROJECT_NAME@Targets.cmake
-set(abb_libegm_LIBRARIES @PROJECT_NAME@::@PROJECT_NAME@)
+# set(TINY_CUDA_NN_FOUND 1)
+set(tiny-cuda-nn_LIBRARIES @PROJECT_NAME@::@PROJECT_NAME@)
+set(TCNN_DEFINITIONS @TCNN_DEFINITIONS@)
+set(CUDA_NVCC_FLAGS @CUDA_NVCC_FLAGS@)
+# set(tiny-cuda-nn_INCLUDE_DIRS @tiny-cuda-nn_INCLUDE_DIR@ @CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES@)
+

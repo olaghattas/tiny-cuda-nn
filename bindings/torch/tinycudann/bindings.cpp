@@ -22,7 +22,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/** @file   torch_bindings.cu
+/** @file   torch_bindings.cpp
  *  @author Thomas Müller, Jacob Munkberg, Jon Hasselgren, Or Perel, NVIDIA
  */
 
@@ -41,7 +41,7 @@
 #undef snprintf
 #endif
 
-#include <json/json.hpp>
+#include <nlohmann/json.hpp>
 
 #include <pybind11_json/pybind11_json.hpp>
 
