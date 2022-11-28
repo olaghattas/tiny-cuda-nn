@@ -71,7 +71,7 @@ class Module {
 public:
   Module(tcnn::cpp::Module *module) : m_module{module} {}
 
-  std::tuple<tcnn::cpp::Context, mxGPUArray *> fwd(mxGPUArray *input, mxGPUArray *params) {
+  mxGPUArray *fwd(mxGPUArray const *input, mxGPUArray const *params) {
 //    CHECK_INPUT(input);
 //    CHECK_INPUT(params);
 //
@@ -110,20 +110,21 @@ public:
       output = mxGPUCreateGPUArray(2, dims, mx_param_precision(), mxREAL, MX_GPU_INITIALIZE_VALUES);
     }
 
-    tcnn::cpp::Context ctx;
+//    tcnn::cpp::Context ctx;
 //    if (!input.requires_grad() && !params.requires_grad()) {
-    m_module->inference(stream, batch_size, (float *) mxGPUGetData(input), mxGPUGetData(output), mxGPUGetData(params));
+    ctx = m_module->forward(stream, batch_size, (const float *) mxGPUGetDataReadOnly(input), mxGPUGetData(output),
+                            mxGPUGetDataReadOnly(params), true);
 //    } else {
 //      ctx = m_module->forward(stream, batch_size, input.data_ptr<float>(), void_data_ptr(output), void_data_ptr(params),
 //                              input.requires_grad());
 //    }
     cudaStreamDestroy(stream);
 
-    return {std::move(ctx), output};
+    return output;
   }
 
   std::tuple<mxGPUArray *, mxGPUArray *>
-  bwd(const tcnn::cpp::Context &ctx, mxGPUArray *input, mxGPUArray *params, mxGPUArray *output,
+  bwd(mxGPUArray *input, mxGPUArray *params, mxGPUArray *output,
       mxGPUArray *dL_doutput) {
     if (!ctx.ctx) {
       throw std::runtime_error{
@@ -206,7 +207,7 @@ public:
   }
 
   std::tuple<mxGPUArray *, mxGPUArray *, mxGPUArray *>
-  bwd_bwd_input(const tcnn::cpp::Context &ctx, mxGPUArray *input, mxGPUArray *params, mxGPUArray *dL_ddLdinput,
+  bwd_bwd_input(mxGPUArray *input, mxGPUArray *params, mxGPUArray *dL_ddLdinput,
                 mxGPUArray *dL_doutput) {
     // from: dL_ddLdinput
     // to:   dL_ddLdoutput, dL_dparams, dL_dinput
@@ -345,11 +346,14 @@ public:
 
 private:
   std::unique_ptr<tcnn::cpp::Module> m_module;
+  tcnn::cpp::Context ctx;
 };
+
+int init(mxArray *plhs[], int nrhs, const mxArray *const *prhs);
 
 #if !defined(TCNN_NO_NETWORKS)
 
-Module create_network_with_input_encoding(uint32_t n_input_dims, uint32_t n_output_dims) {
+Module *create_network_with_input_encoding(uint32_t n_input_dims, uint32_t n_output_dims) {
   nlohmann::json network = {
       {"otype",             "FullyFusedMLP"},
       {"activation",        "ReLU"},
@@ -366,10 +370,10 @@ Module create_network_with_input_encoding(uint32_t n_input_dims, uint32_t n_outp
       {"per_level_scale",      2.0}
   };
 
-  return Module{tcnn::cpp::create_network_with_input_encoding(n_input_dims, n_output_dims, encoding, network)};
+  return new Module(tcnn::cpp::create_network_with_input_encoding(n_input_dims, n_output_dims, encoding, network));
 }
 
-Module create_network(uint32_t n_input_dims, uint32_t n_output_dims) {//}, const nlohmann::json &network) {
+Module *create_network(uint32_t n_input_dims, uint32_t n_output_dims) {//}, const nlohmann::json &network) {
   nlohmann::json network = {
       {"otype",             "FullyFusedMLP"},
       {"activation",        "ReLU"},
@@ -377,13 +381,12 @@ Module create_network(uint32_t n_input_dims, uint32_t n_output_dims) {//}, const
       {"n_neurons",         64},
       {"n_hidden_layers",   2}
   };
-  return Module{tcnn::cpp::create_network(n_input_dims, n_output_dims, network)};
+  return new Module(tcnn::cpp::create_network(n_input_dims, n_output_dims, network));
 }
 
 #endif
 
-Module
-create_encoding(uint32_t n_input_dims) {
+Module *create_encoding(uint32_t n_input_dims) {
   nlohmann::json encoding = {
       {"otype",                "HashGrid"},
       {"n_levels",             16},
@@ -392,8 +395,199 @@ create_encoding(uint32_t n_input_dims) {
       {"base_resolution",      16},
       {"per_level_scale",      2.0}
   };
-  return Module{tcnn::cpp::create_encoding(n_input_dims, encoding, tcnn::cpp::EPrecision::Fp32)};
+  return new Module(tcnn::cpp::create_encoding(n_input_dims, encoding, tcnn::cpp::EPrecision::Fp32));
 }
+
+bool mxCheckGPUArrays(mxArray const *arrays[], int len) {
+  for (int i = 0; i < len; i++) {
+    if (!(mxIsGPUArray(arrays[i]))) {
+      char const *const errId = "parallel:gpu:mexGPUExample:InvalidInput";
+      char const *const errMsg = "Not all inputs are on the GPU";
+      mexErrMsgIdAndTxt(errId, errMsg);
+      return false;
+    }
+  }
+  return true;
+}
+
+// operations
+const int INIT = 0;
+const int DESTROY = 1;
+const int BATCH_SIZE_GRANULARITY = 2;
+const int FREE_TEMPORARY_MEMORY = 3;
+const int FWD = 4;
+const int BWD = 5;
+const int BWD_BWD_INPUT = 6;
+const int INITIAL_PARAMS = 7;
+const int N_INPUT_DIMS = 8;
+const int N_PARAMS = 9;
+const int N_OUTPUT_DIMS = 10;
+const int HYPERPARAMS = 11;
+const int NAME = 12;
+
+// network types
+const int CREATE_NETWORK_WITH_INPUT_ENCODING = 13;
+const int CREATE_NETWORK = 14;
+const int CREATE_ENCODING = 15;
+
+//m.def("create_network_with_input_encoding", &create_network_with_input_encoding);
+//m.def("create_network", &create_network);
+//m.def("create_encoding", &create_encoding);
+
+//m.def("batch_size_granularity", &tcnn::cpp::batch_size_granularity);
+//m.def("free_temporary_memory", &tcnn::cpp::free_temporary_memory);
+//.def("fwd", &Module::fwd)
+//.def("bwd", &Module::bwd)
+//.def("bwd_bwd_input", &Module::bwd_bwd_input)
+//.def("initial_params", &Module::initial_params)
+//.def("n_input_dims", &Module::n_input_dims)
+//.def("n_params", &Module::n_params)
+//.def("n_output_dims", &Module::n_output_dims)
+//.def("output_precision", &Module::output_precision)
+//.def("hyperparams", &Module::hyperparams)
+//.def("name", &Module::name)
+
+
+Module *getModulePtr(const mxArray *pa) {
+  double *pointer0 = mxGetPr(pa);
+  mxAssert(pointer0 != NULL, "input must be a valid network module pointer\n");
+  intptr_t pointer1 = (intptr_t) pointer0[0];
+  return (Module *) pointer1;
+}
+
+
+void init(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
+  mxAssert(nrhs >= 2, "operation requires: (op, network_type)");
+  mxAssert(nlhs == 1, "only one output expected");
+  int network_type = mxGetScalar(prhs[1]);
+  Module *module;
+  switch (network_type) {
+    case CREATE_NETWORK_WITH_INPUT_ENCODING: {
+      mxAssert(nrhs == 3, "operation requires: (op, network_type, num_input_dims, num_output_dims)");
+      int num_input_dims = mxGetScalar(prhs[2]);
+      int num_output_dims = mxGetScalar(prhs[3]);
+      module = create_network_with_input_encoding(num_input_dims, num_output_dims);
+    }
+      break;
+    case CREATE_NETWORK: {
+      mxAssert(nrhs == 3, "operation requires: (op, network_type, num_input_dims, num_output_dims)");
+      int num_input_dims = mxGetScalar(prhs[2]);
+      int num_output_dims = mxGetScalar(prhs[3]);
+      module = create_network(num_input_dims, num_output_dims);
+    }
+      break;
+    case CREATE_ENCODING: {
+      mxAssert(nrhs == 3, "operation requires: (op, network_type, num_input_dims)");
+      int num_input_dims = mxGetScalar(prhs[2]);
+      module = create_encoding(num_input_dims);
+    }
+      break;
+    default:
+      mxAssert(false, "invalid network type ");
+      break;
+  }
+
+  plhs[0] = mxCreateDoubleMatrix(1, 1, mxREAL);
+  double *module_ptr = mxGetPr(plhs[0]);
+  module_ptr[0] = (intptr_t) module;
+}
+
+void destroy(int nlhs, mxArray *plhs[],
+             int nrhs, const mxArray *prhs[]) {
+  mxAssert(nrhs == 2, "Only two input argument expected");
+  mxAssert(nlhs == 0, "no output arguments expected");
+  Module *module = getModulePtr(prhs[1]);
+  delete module;
+  printf("deleted module\n");
+}
+
+void batch_size_granularity(int nlhs, mxArray *plhs[],
+                            int nrhs, const mxArray *prhs[]) {
+  mxAssert(nrhs == 1, "Only one input argument expected");
+  mxAssert(nlhs == 1, "only one output expected");
+  Module *module = getModulePtr(prhs[1]);
+  plhs[0] = mxCreateDoubleMatrix(1, 1, mxREAL);
+  double *double_ptr = mxGetPr(plhs[0]);
+  *double_ptr = tcnn::cpp::batch_size_granularity();
+}
+
+void free_temporary_memory(int nlhs, mxArray *plhs[],
+                           int nrhs, const mxArray *prhs[]) {
+  mxAssert(nrhs == 1, "Only one input argument expected");
+  mxAssert(nlhs == 0, "no outputs expected");
+  tcnn::cpp::free_temporary_memory();
+}
+
+void fwd(int nlhs, mxArray *plhs[],
+         int nrhs, const mxArray *prhs[]) {
+  mxAssert(nrhs == 4, "Only four input argument expected");
+  mxAssert(nlhs == 1, "one output argument expected");
+  Module *module = getModulePtr(prhs[1]);
+  mxGPUArray const *input = mxGPUCreateFromMxArray(prhs[2]);
+  mxGPUArray const *params = mxGPUCreateFromMxArray(prhs[3]);
+
+  mxGPUArray *output = module->fwd(input, params);
+  plhs[0] = mxGPUCreateMxArrayOnGPU(output);
+  mxGPUDestroyGPUArray(output);
+
+  mxGPUDestroyGPUArray(input);
+  mxGPUDestroyGPUArray(params);
+}
+
+
+void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
+  // Perform error checks
+  mxAssert(nrhs > 0, "function requires input arguments");
+
+  // Initialize the MathWorks GPU API
+  mxInitGPU();
+
+  int val = mxGetScalar(prhs[0]);
+  mxAssert(val >= 0 && val <= 12, "validation operations are between 0 and 12");
+  switch (val) {
+    case INIT:
+      init(nlhs, plhs, nrhs, prhs);
+      break;
+    case DESTROY:
+      destroy(nlhs, plhs, nrhs, prhs);
+      break;
+    case BATCH_SIZE_GRANULARITY:
+      batch_size_granularity(nlhs, plhs, nrhs, prhs);
+      break;
+    case FREE_TEMPORARY_MEMORY:
+      batch_size_granularity(nlhs, plhs, nrhs, prhs);
+      break;
+    case FWD:
+      fwd(nlhs, plhs, nrhs, prhs);
+      break;
+    default:
+      mxAssert(false, "operation value is invalid");
+      break;
+  }
+
+//  if (nrhs != 10) {
+//    char const *const errId = "parallel:gpu:mexGPUExample:InvalidInput";
+//    char const *const errMsg = "Wrong number of inputs";
+//    mexErrMsgIdAndTxt(errId, errMsg);
+//  }
+
+//  for (int i = 0; i < 5; i++) {
+//    if (!(mxIsGPUArray(prhs[i]))) {
+//      char const *const errId = "parallel:gpu:mexGPUExample:InvalidInput";
+//      char const *const errMsg = "Not all inputs are on the GPU";
+//      mexErrMsgIdAndTxt(errId, errMsg);
+//    }
+//  }
+
+
+}
+
+
+
+
+
+
+
 
 //PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
 //py::enum_<tcnn::cpp::EPrecision>(m, "Precision")

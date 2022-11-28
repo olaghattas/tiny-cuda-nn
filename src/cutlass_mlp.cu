@@ -333,7 +333,7 @@ std::unique_ptr<typename CutlassMLP<T>::ForwardContext> CutlassMLP<T>::allocate_
 }
 
 template <typename T>
-void CutlassMLP<T>::set_params(T* params, T* inference_params, T* backward_params, T* gradients) {
+void CutlassMLP<T>::set_params(T const * params, T* inference_params, T* backward_params, T* gradients) {
 	size_t current_pos = 0;
 	for (size_t i = 0; i < m_weight_matrices.size(); ++i) {
 		m_weight_matrices[i].set_data_unsafe(params + current_pos);
@@ -344,7 +344,7 @@ void CutlassMLP<T>::set_params(T* params, T* inference_params, T* backward_param
 }
 
 template <typename T>
-void CutlassMLP<T>::initialize_params(pcg32& rnd, float* params_full_precision, T* params, T* inference_params, T* backward_params, T* gradients, float scale) {
+void CutlassMLP<T>::initialize_params(pcg32& rnd, float* params_full_precision, T const * params, T* inference_params, T* backward_params, T* gradients, float scale) {
 	set_params(params, inference_params, backward_params, gradients);
 
 	size_t current_pos = 0;

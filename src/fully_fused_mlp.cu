@@ -859,7 +859,7 @@ std::unique_ptr<typename FullyFusedMLP<T, WIDTH>::ForwardContext> FullyFusedMLP<
 }
 
 template <typename T, int WIDTH>
-void FullyFusedMLP<T, WIDTH>::set_params(T* params, T* inference_params, T* backward_params, T* gradients) {
+void FullyFusedMLP<T, WIDTH>::set_params(T const * params, T* inference_params, T* backward_params, T* gradients) {
 	size_t current_pos = 0;
 	for (size_t i = 0; i < m_weight_matrices.size(); ++i) {
 		m_weight_matrices[i].set_data_unsafe(params + current_pos);
@@ -871,7 +871,7 @@ void FullyFusedMLP<T, WIDTH>::set_params(T* params, T* inference_params, T* back
 }
 
 template <typename T, int WIDTH>
-void FullyFusedMLP<T, WIDTH>::initialize_params(pcg32& rnd, float* params_full_precision, T* params, T* inference_params, T* backward_params, T* gradients, float scale) {
+void FullyFusedMLP<T, WIDTH>::initialize_params(pcg32& rnd, float* params_full_precision, T const * params, T* inference_params, T* backward_params, T* gradients, float scale) {
 	set_params(params, inference_params, backward_params, gradients);
 
 	size_t current_pos = 0;

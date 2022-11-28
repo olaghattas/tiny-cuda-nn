@@ -223,11 +223,11 @@ public:
 		return m_params_full_precision;
 	}
 
-	PARAMS_T* params() const {
+	PARAMS_T const * params() const {
 		return m_params;
 	}
 
-	PARAMS_T* params_inference() const {
+	PARAMS_T const * params_inference() const {
 		return m_params_inference;
 	}
 

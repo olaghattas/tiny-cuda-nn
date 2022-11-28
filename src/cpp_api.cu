@@ -70,7 +70,7 @@ public:
 	: Module{precision<T>(), precision<T>()}, m_model{model}
 	{}
 
-	void inference(cudaStream_t stream, uint32_t n_elements, const float* input, void* output, void* params) override {
+	void inference(cudaStream_t stream, uint32_t n_elements, const float* input, void* output, const void* params) override {
 		m_model->set_params((T*)params, (T*)params, nullptr, nullptr);
 
 		GPUMatrix<float, MatrixLayout::ColumnMajor> input_matrix((float*)input, m_model->input_width(), n_elements);
@@ -82,7 +82,7 @@ public:
 		m_model->inference_mixed_precision(synced_stream.get(1), input_matrix, output_matrix);
 	}
 
-	Context forward(cudaStream_t stream, uint32_t n_elements, const float* input, void* output, void* params, bool prepare_input_gradients) override {
+	Context forward(cudaStream_t stream, uint32_t n_elements, const float* input, void* output, const void* params, bool prepare_input_gradients) override {
 		m_model->set_params((T*)params, (T*)params, nullptr, nullptr);
 
 		GPUMatrix<float, MatrixLayout::ColumnMajor> input_matrix((float*)input, m_model->input_width(), n_elements);

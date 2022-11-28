@@ -53,7 +53,7 @@ public:
 	virtual ~GPUMatrixBase() {}
 
 	virtual size_t n_bytes() const = 0;
-	virtual void set_data_unsafe(void* data) = 0;
+	virtual void set_data_unsafe(void const* data) = 0;
 
 	static void allocate_shared_memory(GPUMemory<char>& memory, const std::vector<GPUMatrixBase*>& matrices) {
 		size_t total_n_bytes = 0;
@@ -183,7 +183,7 @@ public:
 
 	virtual ~GPUMatrixDynamic() {}
 
-	void set_data_unsafe(void* data) override { m_data = (T*)data; }
+	void set_data_unsafe(void const* data) override { m_data = (T*)data; }
 	void set_size_unsafe(uint32_t rows, uint32_t cols, uint32_t stride = 0) {
 		m_rows = rows;
 		m_cols = cols;

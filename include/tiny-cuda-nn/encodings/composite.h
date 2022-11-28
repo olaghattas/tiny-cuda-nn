@@ -403,7 +403,7 @@ public:
 		return m_nested.empty() ? AoS : m_nested.front()->preferred_output_layout();
 	}
 
-	void set_params(T* params, T* inference_params, T* backward_params, T* gradients) override {
+	void set_params(T const * params, T* inference_params, T* backward_params, T* gradients) override {
 		size_t offset = 0;
 		for (auto& nested : m_nested) {
 			nested->set_params(
@@ -416,7 +416,7 @@ public:
 		}
 	}
 
-	void initialize_params(pcg32& rnd, float* params_full_precision, T* params, T* inference_params, T* backward_params, T* gradients, float scale = 1) override {
+	void initialize_params(pcg32& rnd, float* params_full_precision, T const * params, T* inference_params, T* backward_params, T* gradients, float scale = 1) override {
 		size_t offset = 0;
 		for (auto& nested : m_nested) {
 			nested->initialize_params(

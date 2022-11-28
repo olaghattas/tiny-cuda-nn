@@ -59,8 +59,8 @@ public:
 		EGradientMode param_gradients_mode = EGradientMode::Overwrite
 	) override;
 
-	void set_params(T* params, T* inference_params, T* backward_params, T* gradients) override;
-	void initialize_params(pcg32& rnd, float* params_full_precision, T* params, T* inference_params, T* backward_params, T* gradients, float scale = 1) override;
+	void set_params(T const * params, T* inference_params, T* backward_params, T* gradients) override;
+	void initialize_params(pcg32& rnd, float* params_full_precision, T const * params, T* inference_params, T* backward_params, T* gradients, float scale = 1) override;
 
 	GPUMatrix<T, RM>& input_weight_matrix(WeightUsage usage) {
 		switch (usage) {
