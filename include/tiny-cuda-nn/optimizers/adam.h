@@ -35,7 +35,7 @@
 #include <tiny-cuda-nn/common_device.h>
 #include <tiny-cuda-nn/optimizer.h>
 #include <tiny-cuda-nn/gpu_memory_json.h>
-#include <json/json.hpp>
+#include "nlohmann/json.hpp"
 
 #include <stdexcept>
 #include <stdint.h>

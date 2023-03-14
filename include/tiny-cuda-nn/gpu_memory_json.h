@@ -29,7 +29,7 @@
 
 #pragma once
 
-#include <json/json.hpp>
+#include "nlohmann/json.hpp"
 
 TCNN_NAMESPACE_BEGIN
 

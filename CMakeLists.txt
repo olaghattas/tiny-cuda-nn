@@ -245,7 +245,7 @@ if (NOT MSVC)
 endif()
 
 set(BUILD_SHARED_LIBS OFF)
-add_subdirectory("dependencies/fmt")
+#add_subdirectory("dependencies/fmt")
 
 ###############################################################################
 # tiny-cuda-nn library, samples, and benchmarks
@@ -260,8 +260,10 @@ set(TCNN_SOURCES
 	src/common.cu
 	src/common_device.cu
 	src/cpp_api.cu
+	src/cuda_graph.cu
 	src/cutlass_mlp.cu
 	src/encoding.cu
+	src/gpu_memory.cu
 	src/loss.cu
 	src/network.cu
 	src/object.cu
@@ -277,17 +279,18 @@ endif()
 # Linker / library
 ###############################################################################
 
-add_library(tiny-cuda-nn STATIC ${TCNN_SOURCES})
-target_compile_definitions(tiny-cuda-nn PUBLIC ${TCNN_DEFINITIONS})
+add_library(tiny-cuda-nn SHARED ${TCNN_SOURCES})
+target_compile_definitions(tiny-cuda-nn PUBLIC ${TCNN_DEFINITIONS} -DCMAKE_POSITION_INDEPENDENT_CODE)
 target_compile_options(tiny-cuda-nn PUBLIC $<$<COMPILE_LANGUAGE:CUDA>:${CUDA_NVCC_FLAGS}>)
 target_include_directories(tiny-cuda-nn PUBLIC
 	"include"
 	"dependencies"
 	"dependencies/cutlass/include"
 	"dependencies/cutlass/tools/util/include"
-	"dependencies/fmt/include"
+#	"dependencies/fmt/include"
 )
-target_link_libraries(tiny-cuda-nn PUBLIC ${CUDA_LIBRARIES} ${TCNN_LIBRARIES} fmt)
+find_library(FMT_LIBS fmt)
+target_link_libraries(tiny-cuda-nn PUBLIC ${CUDA_LIBRARIES} ${TCNN_LIBRARIES} ${FMT_LIBS})
 
 if (TCNN_BUILD_EXAMPLES)
 	add_subdirectory("samples")
@@ -295,3 +298,25 @@ endif()
 if (TCNN_BUILD_BENCHMARK)
 	add_subdirectory("benchmarks/image")
 endif()
+
+
+
+install(TARGETS tiny-cuda-nn
+		ARCHIVE DESTINATION /usr/local/lib
+#		PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+#		INCLUDES DESTINATION include
+		)
+#		SYMBOLIC_LINKS tiny-cuda-nn.so
+#)
+
+install(DIRECTORY include/
+		DESTINATION /usr/local/include
+		FILES_MATCHING PATTERN "*.h"
+)
+
+
+get_cmake_property(_variableNames VARIABLES)
+list(SORT _variableNames)
+foreach(_variableName ${_variableNames})
+	message("${_variableName}=${${_variableName}}")
+endforeach()

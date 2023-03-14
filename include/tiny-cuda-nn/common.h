@@ -266,6 +266,9 @@ private:
 static_assert(__CUDA_ARCH__ >= MIN_GPU_ARCH * 10, "MIN_GPU_ARCH=" STR(TCNN_MIN_GPU_ARCH) "0 must bound __CUDA_ARCH__=" STR(__CUDA_ARCH__) " from below, but doesn't.");
 #endif
 
+
+#if defined(__NVCC__)
+
 template <typename T>
 TCNN_HOST_DEVICE T clamp(T val, T lower, T upper) {
 	return val < lower ? lower : (upper < val ? upper : val);
@@ -324,6 +327,8 @@ template <typename T>
 constexpr uint32_t n_blocks_linear(T n_elements) {
 	return (uint32_t)div_round_up(n_elements, (T)n_threads_linear);
 }
+
+#endif
 
 #if defined(__NVCC__) || (defined(__clang__) && defined(__CUDA__))
 template <typename K, typename T, typename ... Types>
@@ -427,22 +432,6 @@ template <typename F>
 inline void parallel_for_gpu_soa(size_t n_elements, uint32_t n_dims, F&& fun) {
 	parallel_for_gpu_soa(nullptr, n_elements, n_dims, std::forward<F>(fun));
 }
-#endif
-
-inline std::string bytes_to_string(size_t bytes) {
-	std::array<std::string, 7> suffixes = {{ "B", "KB", "MB", "GB", "TB", "PB", "EB" }};
-
-	double count = (double)bytes;
-	uint32_t i = 0;
-	for (; i < suffixes.size() && count >= 1024; ++i) {
-		count /= 1024;
-	}
-
-	std::ostringstream oss;
-	oss.precision(3);
-	oss << count << " " << suffixes[i];
-	return oss.str();
-}
 
 template <typename T, uint32_t N_DIMS, bool ALIGNED=false>
 struct alignas(ALIGNED ? next_pot(sizeof(T) * N_DIMS) : 0) vector_t {
@@ -486,6 +475,10 @@ struct alignas(ALIGNED ? next_pot(sizeof(T) * N_DIMS) : 0) vector_t {
 	T data[N_DIMS];
 	static constexpr uint32_t N = N_DIMS;
 };
+
+
+
+
 
 template <typename T, uint32_t N, bool A>
 TCNN_HOST_DEVICE vector_t<T, N, A> operator*(T s, const vector_t<T, N, A>& v) {
@@ -581,6 +574,25 @@ using vector_fullp_t = vector_t<float, N_FLOATS>;
 
 template <uint32_t N_HALFS>
 using vector_halfp_t = vector_t<__half, N_HALFS>;
+
+
+#endif
+
+inline std::string bytes_to_string(size_t bytes) {
+    std::array<std::string, 7> suffixes = {{ "B", "KB", "MB", "GB", "TB", "PB", "EB" }};
+
+    double count = (double)bytes;
+    uint32_t i = 0;
+    for (; i < suffixes.size() && count >= 1024; ++i) {
+        count /= 1024;
+    }
+
+    std::ostringstream oss;
+    oss.precision(3);
+    oss << count << " " << suffixes[i];
+    return oss.str();
+}
+
 
 template <typename T>
 struct PitchedPtr {

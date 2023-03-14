@@ -28,8 +28,10 @@ set(SOURCES
 	common.cu
 	common_device.cu
 	cpp_api.cu
+	cuda_graph.cu
 	cutlass_mlp.cu
 	encoding.cu
+	gpu_memory.cu
 	loss.cu
 	network.cu
 	object.cu

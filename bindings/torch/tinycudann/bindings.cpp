@@ -41,7 +41,7 @@
 #undef snprintf
 #endif
 
-#include <json/json.hpp>
+#include "nlohmann/json.hpp"
 
 #include <pybind11_json/pybind11_json.hpp>
 

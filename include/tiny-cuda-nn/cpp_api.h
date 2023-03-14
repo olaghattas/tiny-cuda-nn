@@ -29,7 +29,7 @@
 
 #pragma once
 
-#include <json/json.hpp>
+#include "nlohmann/json.hpp"
 
 #include <cuda_runtime.h>
 
