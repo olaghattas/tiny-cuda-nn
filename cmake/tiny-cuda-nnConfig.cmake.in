@@ -6,14 +6,16 @@ include(CMakeFindDependencyMacro)
 
 # Find dependencies
 find_dependency(fmt REQUIRED)
+find_dependency(nlohmann_json REQUIRED)
+find_dependency(Threads REQUIRED)
 
 # Our library dependencies (contains definitions for IMPORTED targets)
 include("${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@Targets.cmake")
 
 # These are IMPORTED targets created by @PROJECT_NAME@Targets.cmake
 # set(TINY_CUDA_NN_FOUND 1)
-set(tiny-cuda-nn_LIBRARIES @PROJECT_NAME@::@PROJECT_NAME@)
+#set(tiny-cuda-nn_LIBRARIES @PROJECT_NAME@::@PROJECT_NAME@)
+set(tiny-cuda-nn_LIBRARIES /usr/local/lib/lib@PROJECT_NAME@.a @PUBLIC_LINK_LIBS@)
 set(TCNN_DEFINITIONS @TCNN_DEFINITIONS@)
 set(CUDA_NVCC_FLAGS @CUDA_NVCC_FLAGS@)
-# set(tiny-cuda-nn_INCLUDE_DIRS @tiny-cuda-nn_INCLUDE_DIR@ @CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES@)
 

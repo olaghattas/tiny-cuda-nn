@@ -74,11 +74,12 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CUDA_STANDARD 14)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_EXTENSIONS OFF)
-#set(CUDA_LINK_LIBRARIES_KEYWORD PUBLIC)
+set(CUDA_LINK_LIBRARIES_KEYWORD PUBLIC)
 
 get_directory_property(TCNN_HAS_PARENT PARENT_DIRECTORY)
 
 # adapted from https://stackoverflow.com/a/69353718
+find_package(CUDA)
 include(FindCUDA/select_compute_arch)
 CUDA_DETECT_INSTALLED_GPUS(INSTALLED_GPU_CCS_1)
 string(STRIP "${INSTALLED_GPU_CCS_1}" INSTALLED_GPU_CCS_2)
@@ -170,6 +171,8 @@ else ()
 endif ()
 list(APPEND CUDA_NVCC_FLAGS "--extended-lambda")
 list(APPEND CUDA_NVCC_FLAGS "--expt-relaxed-constexpr")
+list(APPEND CUDA_NVCC_FLAGS "-Xcompiler")
+list(APPEND CUDA_NVCC_FLAGS "-fPIC")
 
 
 ###############################################################################
@@ -244,7 +247,9 @@ find_package(nlohmann_json REQUIRED)
 find_package(FMT REQUIRED)
 
 
-target_link_libraries(tiny-cuda-nn PUBLIC ${CUDA_LIBRARIES} cuda cublas fmt::fmt ${nlohmann_json_LIBRARIES})
+target_link_libraries(tiny-cuda-nn PRIVATE ${CUDA_LIBRARIES} ${CUDA_CUDA_LIBRARY} ${CUDA_CUBLAS_LIBRARIES} fmt::fmt ${nlohmann_json_LIBRARIES})
+
+#set(PUBLIC_LINK_LIBS ${CUDA_LIBRARIES} ${CUDA_CUDA_LIBRARY} ${CUDA_CUBLAS_LIBRARIES})
 
 if (TCNN_BUILD_EXAMPLES)
   add_subdirectory("samples")

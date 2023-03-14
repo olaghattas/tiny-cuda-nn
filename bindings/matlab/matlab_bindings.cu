@@ -301,9 +301,13 @@ public:
   }
 
   mxGPUArray *initial_params(size_t seed) {
-    mwSize dims[1];
-    dims[0] = n_params();
-    mxGPUArray *output = mxGPUCreateGPUArray(1, dims, mxClassID::mxSINGLE_CLASS, mxREAL, MX_GPU_INITIALIZE_VALUES);
+    mwSize dim = n_params();
+//    *(dims) = 0;
+    mxArray *tmp = mxCreateNumericMatrix(dim, 1, mxClassID::mxSINGLE_CLASS, mxREAL);
+//    mxGPUArray *output = mxGPUCreateGPUArray(0, &dim, mxClassID::mxSINGLE_CLASS, mxREAL, MX_GPU_INITIALIZE_VALUES);
+    mxGPUArray *output = mxGPUCopyFromMxArray(tmp);
+//mxGPUArray *output = mxGPUCreateGPUArray(1, dims, mxClassID::mxSINGLE_CLASS, mxREAL, MX_GPU_INITIALIZE_VALUES);
+//auto tmp = (float *) mxGPUGetData(output);
     m_module->initialize_params(seed, (float *) mxGPUGetData(output));
     return output;
   }
@@ -463,14 +467,14 @@ void init(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   Module *module;
   switch (network_type) {
     case CREATE_NETWORK_WITH_INPUT_ENCODING: {
-      mxAssert(nrhs == 3, "operation requires: (op, network_type, num_input_dims, num_output_dims)");
+      mxAssert(nrhs == 4, "operation requires: (op, network_type, num_input_dims, num_output_dims)");
       int num_input_dims = mxGetScalar(prhs[2]);
       int num_output_dims = mxGetScalar(prhs[3]);
       module = create_network_with_input_encoding(num_input_dims, num_output_dims);
     }
       break;
     case CREATE_NETWORK: {
-      mxAssert(nrhs == 3, "operation requires: (op, network_type, num_input_dims, num_output_dims)");
+      mxAssert(nrhs == 4, "operation requires: (op, network_type, num_input_dims, num_output_dims)");
       int num_input_dims = mxGetScalar(prhs[2]);
       int num_output_dims = mxGetScalar(prhs[3]);
       module = create_network(num_input_dims, num_output_dims);
@@ -503,7 +507,7 @@ void destroy(int nlhs, mxArray *plhs[],
 
 void batch_size_granularity(int nlhs, mxArray *plhs[],
                             int nrhs, const mxArray *prhs[]) {
-  mxAssert(nrhs == 1, "Only one input argument expected");
+  mxAssert(nrhs == 2, "Only one input argument expected");
   mxAssert(nlhs == 1, "only one output expected");
   Module *module = getModulePtr(prhs[1]);
   plhs[0] = mxCreateDoubleMatrix(1, 1, mxREAL);
@@ -534,8 +538,19 @@ void fwd(int nlhs, mxArray *plhs[],
   mxGPUDestroyGPUArray(params);
 }
 
+void initial_params(int nlhs, mxArray *plhs[],
+                    int nrhs, const mxArray *prhs[]) {
+  mxAssert(nrhs == 2, "Only four input argument expected");
+  mxAssert(nlhs == 1, "one output argument expected");
+  Module *module = getModulePtr(prhs[1]);
+  mxGPUArray *params = module->initial_params(0);
+  plhs[0] = mxGPUCreateMxArrayOnGPU(params);
+  mxGPUDestroyGPUArray(params);
 
-void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
+}
+
+
+void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   // Perform error checks
   mxAssert(nrhs > 0, "function requires input arguments");
 
@@ -559,6 +574,9 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
       break;
     case FWD:
       fwd(nlhs, plhs, nrhs, prhs);
+      break;
+    case INITIAL_PARAMS:
+      initial_params(nlhs, plhs, nrhs, prhs);
       break;
     default:
       mxAssert(false, "operation value is invalid");
