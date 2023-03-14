@@ -303,11 +303,7 @@ endif()
 
 install(TARGETS tiny-cuda-nn
 		ARCHIVE DESTINATION /usr/local/lib
-#		PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
-#		INCLUDES DESTINATION include
 		)
-#		SYMBOLIC_LINKS tiny-cuda-nn.so
-#)
 
 install(DIRECTORY include/
 		DESTINATION /usr/local/include

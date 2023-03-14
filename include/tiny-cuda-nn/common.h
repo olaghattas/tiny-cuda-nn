@@ -66,15 +66,15 @@ static constexpr uint32_t MIN_GPU_ARCH = TCNN_MIN_GPU_ARCH;
 // 53-60, 62 |                      no |                       70 |  __half (no tensor cores)
 //  <=52, 61 |                      no |                       70 |   float (no tensor cores)
 
-#if TCNN_HALF_PRECISION
-using network_precision_t = __half;
-#else
-using network_precision_t = float;
-#endif
+//#if TCNN_HALF_PRECISION
+//using network_precision_t = __half;
+//#else
+//using network_precision_t = float;
+//#endif
 
 // Optionally: set the precision to `float` to disable tensor cores and debug potential
 //             problems with mixed-precision training.
-// using network_precision_t = float;
+ using network_precision_t = float;
 
 // #define TCNN_VERBOSE_MEMORY_ALLOCS
 

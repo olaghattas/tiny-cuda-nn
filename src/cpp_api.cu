@@ -68,7 +68,7 @@ constexpr EPrecision precision() {
 }
 
 EPrecision preferred_precision() {
-	return precision<network_precision_t>();
+	return precision<float>();
 }
 
 template <typename T>
@@ -166,7 +166,7 @@ private:
 
 #if !defined(TCNN_NO_NETWORKS)
 Module* create_network_with_input_encoding(uint32_t n_input_dims, uint32_t n_output_dims, const json& encoding, const json& network) {
-	return new DifferentiableObject<network_precision_t>{new tcnn::NetworkWithInputEncoding<network_precision_t>{n_input_dims, n_output_dims, encoding, network}};
+	return new DifferentiableObject<float>{new tcnn::NetworkWithInputEncoding<float>{n_input_dims, n_output_dims, encoding, network}};
 }
 
 Module* create_network(uint32_t n_input_dims, uint32_t n_output_dims, const json& network) {
