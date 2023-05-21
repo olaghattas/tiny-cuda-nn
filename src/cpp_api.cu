@@ -34,6 +34,8 @@
 
 #if !defined(TCNN_NO_NETWORKS)
 #include <tiny-cuda-nn/network_with_input_encoding.h>
+#include "tiny-cuda-nn/losses/l2.h"
+
 #endif
 
 namespace tcnn { namespace cpp {
@@ -155,6 +157,35 @@ public:
 private:
 	std::shared_ptr<tcnn::DifferentiableObject<float, T, T>> m_model;
 };
+
+
+template <typename T>
+class GPUL2Loss : public L2Loss {
+public:
+    explicit GPUL2Loss(tcnn::L2Loss<T>* loss)
+            : L2Loss{precision<T>()}, m_loss{loss}
+    {}
+
+    void l2_loss(cudaStream_t stream, uint32_t batch_size, uint32_t prediction_size, const uint32_t stride, const uint32_t dims, const float loss_scale,
+                 const float* prediction, const float* target, float* values,
+                 float* gradients, const float* data_pdf){
+
+            GPUMatrix<float, MatrixLayout::ColumnMajor> prediction_matrix((float*) prediction, prediction_size, batch_size);
+            GPUMatrix<float, MatrixLayout::ColumnMajor> target_matrix((float*) target, prediction_size, batch_size);
+            GPUMatrix<float, MatrixLayout::ColumnMajor> values_matrix((float*) values, prediction_size, batch_size);
+            GPUMatrix<float, MatrixLayout::ColumnMajor> gradients_matrix((float*) gradients, prediction_size, batch_size);
+
+            m_loss->evaluate(stream, stride, dims, loss_scale, prediction_matrix, target_matrix, values_matrix, gradients_matrix,nullptr);
+    }
+private:
+    std::shared_ptr<tcnn::L2Loss<T>> m_loss;
+};
+
+L2Loss* create_l2_loss() {
+    return new GPUL2Loss<network_precision_t>{new tcnn::L2Loss<network_precision_t>() };
+}
+
+
 
 #if !defined(TCNN_NO_NETWORKS)
 Module* create_network_with_input_encoding(uint32_t n_input_dims, uint32_t n_output_dims, const json& encoding, const json& network) {

@@ -101,6 +101,18 @@ private:
 	EPrecision m_output_precision;
 };
 
+class L2Loss {
+public:
+    L2Loss(EPrecision loss_precision) : m_loss_precision{loss_precision} {}
+    virtual void l2_loss(cudaStream_t stream, uint32_t batch_size, uint32_t prediction_size, const uint32_t stride, const uint32_t dims, const float loss_scale,
+                         const float* prediction, const float* target, float* values,
+                         float* gradients, const float* data_pdf = nullptr) = 0;
+private:
+    EPrecision m_loss_precision;
+};
+
+L2Loss* create_l2_loss();
+
 Module* create_network_with_input_encoding(uint32_t n_input_dims, uint32_t n_output_dims, const json& encoding, const json& network);
 Module* create_network(uint32_t n_input_dims, uint32_t n_output_dims, const json& network);
 Module* create_encoding(uint32_t n_input_dims, const json& encoding, EPrecision requested_precision);

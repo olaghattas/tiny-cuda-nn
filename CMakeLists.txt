@@ -255,6 +255,11 @@ install(
 )
 
 install(
+    DIRECTORY dependencies/json
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+install(
     TARGETS ${PROJECT_NAME}
     EXPORT export_${PROJECT_NAME}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
