@@ -125,6 +125,7 @@ public:
     virtual Context training_step(cudaStream_t stream, uint32_t batch_size, float* training_batch_inputs, float* training_batch_targets) = 0;
     virtual float loss(cudaStream_t stream, const Context& ctx) const = 0;
     virtual Module* get_network() = 0;
+    virtual float* params() const = 0;
 private:
 };
 

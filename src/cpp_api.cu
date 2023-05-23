@@ -213,6 +213,7 @@ public:
                                                                                  n_input_dims_, batch_size);
         GPUMatrix<float, MatrixLayout::ColumnMajor> training_batch_targets_matrix((float *) training_batch_targets,
                                                                                   n_output_dims_, batch_size);
+
         return {trainable_model_.trainer->training_step(stream, training_batch_inputs_matrix,training_batch_targets_matrix)};
     }
 
@@ -224,6 +225,10 @@ public:
     Module* get_network() {
         return new DifferentiableObject<float>{&*trainable_model_.network};
     }
+    float* params() const {
+        return trainable_model_.trainer->params();
+    }
+
 private:
     tcnn::TrainableModel trainable_model_;
     uint32_t n_input_dims_;
