@@ -35,8 +35,12 @@
 #if !defined(TCNN_NO_NETWORKS)
 #include <tiny-cuda-nn/network_with_input_encoding.h>
 #include "tiny-cuda-nn/losses/l2.h"
+#include "tiny-cuda-nn/optimizers/adam.h"
+#include "tiny-cuda-nn/config.h"
 
 #endif
+
+#include "tiny-cuda-nn/trainer.h"
 
 namespace tcnn { namespace cpp {
 
@@ -181,10 +185,64 @@ private:
     std::shared_ptr<tcnn::L2Loss<T>> m_loss;
 };
 
+
+template <typename T>
+class GPUAdamOptimizer : public AdamOptimizer {
+public:
+    explicit GPUAdamOptimizer(tcnn::AdamOptimizer<T>* optimizer)
+            : AdamOptimizer{precision<T>()}, optimizer_{optimizer}
+    {}
+private:
+    std::shared_ptr<tcnn::AdamOptimizer<T>> optimizer_;
+};
+
+
+class GPUTrainableModel : public TrainableModel {
+public:
+    explicit GPUTrainableModel(uint32_t n_input_dims,
+                               uint32_t n_output_dims,
+                               const json & config) : TrainableModel{}
+    {
+        trainable_model_ = create_from_config(n_input_dims, n_output_dims, config);
+        n_input_dims_ = n_input_dims;
+        n_output_dims_ = n_output_dims;
+    }
+    Context training_step(cudaStream_t stream, uint32_t batch_size, float* training_batch_inputs, float* training_batch_targets) {
+
+        GPUMatrix<float, MatrixLayout::ColumnMajor> training_batch_inputs_matrix((float *) training_batch_inputs,
+                                                                                 n_input_dims_, batch_size);
+        GPUMatrix<float, MatrixLayout::ColumnMajor> training_batch_targets_matrix((float *) training_batch_targets,
+                                                                                  n_output_dims_, batch_size);
+        return {trainable_model_.trainer->training_step(stream, training_batch_inputs_matrix,training_batch_targets_matrix)};
+    }
+
+    float loss(cudaStream_t stream, const Context& ctx) const {
+        const auto& forward = dynamic_cast<const tcnn::Trainer<float, float>::ForwardContext&>(*ctx.ctx);
+        return trainable_model_.trainer->loss(stream, forward);
+    }
+
+    Module* get_network() {
+        return new DifferentiableObject<float>{&*trainable_model_.network};
+    }
+private:
+    tcnn::TrainableModel trainable_model_;
+    uint32_t n_input_dims_;
+    uint32_t n_output_dims_;
+};
+
+TrainableModel* create_trainable_model(uint32_t n_input_dims,
+                                       uint32_t n_output_dims,
+                                       const json & config){
+    return new GPUTrainableModel{n_input_dims, n_output_dims, config};
+}
+
 L2Loss* create_l2_loss() {
     return new GPUL2Loss<network_precision_t>{new tcnn::L2Loss<network_precision_t>() };
 }
 
+AdamOptimizer* create_adam_optimizer(const json& optimizer_config){
+    return new GPUAdamOptimizer<network_precision_t>{new tcnn::AdamOptimizer<network_precision_t>(optimizer_config) };
+}
 
 
 #if !defined(TCNN_NO_NETWORKS)

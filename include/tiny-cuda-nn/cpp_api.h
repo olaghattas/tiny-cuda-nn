@@ -35,6 +35,7 @@
 
 #include <memory>
 #include <string>
+//#include "trainer.h"
 
 namespace tcnn {
 	struct Context {
@@ -111,7 +112,28 @@ private:
     EPrecision m_loss_precision;
 };
 
+class AdamOptimizer {
+public:
+    AdamOptimizer(EPrecision loss_precision) : m_loss_precision{loss_precision} {}
+private:
+    EPrecision m_loss_precision;
+};
+
+class TrainableModel {
+public:
+    TrainableModel() {}
+    virtual Context training_step(cudaStream_t stream, uint32_t batch_size, float* training_batch_inputs, float* training_batch_targets) = 0;
+    virtual float loss(cudaStream_t stream, const Context& ctx) const = 0;
+    virtual Module* get_network() = 0;
+private:
+};
+
+TrainableModel* create_trainable_model(uint32_t n_input_dims,
+                                       uint32_t n_output_dims,
+                                       const json & config);
+
 L2Loss* create_l2_loss();
+AdamOptimizer* create_adam_optimizer(const json& optimizer_config);
 
 Module* create_network_with_input_encoding(uint32_t n_input_dims, uint32_t n_output_dims, const json& encoding, const json& network);
 Module* create_network(uint32_t n_input_dims, uint32_t n_output_dims, const json& network);
