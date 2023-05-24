@@ -186,8 +186,8 @@ find_library(
 )
 
 #set(BUILD_SHARED_LIBS OFF)
-set(FMT_INSTALL ON)
-add_subdirectory("dependencies/fmt")
+#set(FMT_INSTALL ON)
+#add_subdirectory("dependencies/fmt")
 
 ###############################################################################
 # tiny-cuda-nn library, samples, and benchmarks
@@ -226,17 +226,20 @@ target_compile_options(tiny-cuda-nn PUBLIC $<$<COMPILE_LANGUAGE:CUDA>:${CUDA_NVC
 #target_include_directories(tiny-cuda-nn PUBLIC
 #		$<INSTALL_INTERFACE:include>
 #		)
+
+find_package(fmt REQUIRED)
 set(TINY_INCLUDE_DIRS
     "include"
     "dependencies"
     "dependencies/cutlass/include"
     "dependencies/cutlass/tools/util/include"
-    "dependencies/fmt/include")
+#    "dependencies/fmt/include"
+    )
 
 target_include_directories(tiny-cuda-nn PUBLIC
     $<BUILD_INTERFACE:${TINY_INCLUDE_DIRS}>
     )
-target_link_libraries(tiny-cuda-nn PRIVATE ${CUDA_LIBRARIES} cuda cublas fmt)
+target_link_libraries(tiny-cuda-nn PRIVATE ${CUDA_LIBRARIES} cuda cublas fmt::fmt)
 
 if (TCNN_BUILD_EXAMPLES)
   add_subdirectory("samples")
@@ -302,3 +305,12 @@ install(
     FILE ${PROJECT_NAME}Targets.cmake
     NAMESPACE ${PROJECT_NAME}::
 )
+
+# debug
+get_cmake_property(_variableNames VARIABLES)
+list(SORT _variableNames)
+
+foreach(_variableName ${_variableNames})
+  message(STATUS "${_variableName}=${${_variableName}}")
+endforeach()
+
