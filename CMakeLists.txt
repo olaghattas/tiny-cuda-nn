@@ -28,7 +28,7 @@ project(
     DESCRIPTION "Lightning fast & tiny C++/CUDA neural network framework"
     LANGUAGES CXX CUDA
 )
-
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 option(TCNN_BUILD_BENCHMARK "Build tiny-cuda-nn example benchmark?" ON)
 option(TCNN_BUILD_EXAMPLES "Build tiny-cuda-nn example applications?" ON)
 set(TCNN_CUDA_ARCHITECTURES "" CACHE STRING "Build tiny-cuda-nn for a specific GPU architecture.")
