@@ -68,7 +68,7 @@ nvcc_flags += [f"-gencode=arch=compute_{compute_capability},code={code}_{compute
 if os.name == "posix":
 	cflags = ["-std=c++14"]
 	nvcc_flags += [
-		"-Xcompiler=-mf16c",
+		# "-Xcompiler=-mf16c",
 		"-Xcompiler=-Wno-float-conversion",
 		"-Xcompiler=-fno-strict-aliasing",
 	]

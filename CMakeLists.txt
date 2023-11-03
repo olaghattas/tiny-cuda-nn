@@ -161,7 +161,7 @@ endif ()
 
 if (MSVC)
 else ()
-  list(APPEND CUDA_NVCC_FLAGS "-Xcompiler=-mf16c")
+#  list(APPEND CUDA_NVCC_FLAGS "-Xcompiler=-mf16c")
   list(APPEND CUDA_NVCC_FLAGS "-Xcompiler=-Wno-float-conversion")
   list(APPEND CUDA_NVCC_FLAGS "-Xcompiler=-fno-strict-aliasing")
   list(APPEND CUDA_NVCC_FLAGS "-Xcudafe=--diag_suppress=unrecognized_gcc_pragma")
